@@ -8,42 +8,41 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <style>
         .card-content { max-height: 0; overflow: hidden; transition: all 0.3s ease-out; opacity: 0; }
-        .expanded .card-content { max-height: 800px; opacity: 1; padding-top: 1rem; }
+        .expanded .card-content { max-height: 1000px; opacity: 1; padding-top: 1rem; }
         .chevron { transition: transform 0.3s ease; }
         .expanded .chevron { transform: rotate(180deg); }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen font-sans">
 
-    <header class="bg-blue-800 text-white py-10 shadow-lg">
-        <div class="max-w-6xl mx-auto px-4">
-            <h1 class="text-4xl font-extrabold mb-2 text-center">HKDSE Paper 4 Speaking Archive</h1>
-            <p class="text-blue-100 text-center text-lg">Comprehensive Past Paper Questions 2013 — 2025</p>
+    <header class="bg-blue-900 text-white py-10 shadow-lg">
+        <div class="max-w-6xl mx-auto px-4 text-center">
+            <h1 class="text-4xl font-extrabold mb-2 text-white">HKDSE Paper 4 Speaking Archive</h1>
+            <p class="text-blue-200 text-lg">2013 — 2025 Past Paper Database</p>
         </div>
     </header>
 
     <main class="max-w-6xl mx-auto px-4 py-8">
-        
         <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100 mb-8 space-y-6">
             <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">Search Keywords</label>
-                <input type="text" id="searchInput" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="Search topics, vocabulary, or questions...">
+                <label class="block text-sm font-bold text-gray-700 mb-2">Search Keywords</label>
+                <input type="text" id="searchInput" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="Search topics, questions, or vocabulary...">
             </div>
 
             <div>
-                <span class="block text-sm font-semibold text-gray-700 mb-3">Filter by Year</span>
+                <span class="block text-sm font-bold text-gray-700 mb-2">Filter by Year</span>
                 <div id="yearContainer" class="flex flex-wrap gap-2"></div>
             </div>
 
             <div>
-                <span class="block text-sm font-semibold text-gray-700 mb-3">Filter by Category</span>
+                <span class="block text-sm font-bold text-gray-700 mb-2">Filter by Category</span>
                 <div id="categoryContainer" class="flex flex-wrap gap-2"></div>
             </div>
         </div>
 
         <div class="flex justify-between items-center mb-6">
             <div id="resultsCount" class="text-gray-600 font-medium italic">Loading papers...</div>
-            <button onclick="resetFilters()" class="text-blue-600 hover:underline text-sm font-semibold">Reset All Filters</button>
+            <button onclick="resetFilters()" class="text-blue-600 hover:underline text-sm font-semibold">Reset Filters</button>
         </div>
 
         <div id="cardsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
@@ -52,15 +51,10 @@
     <script>
         const CSV_FILE = 'HKDSE English Paper 4 Speaking Past Papers (2013-2025) - Table 1.csv';
         
-        // Mapping 'Source' column ID to PDF filenames
-        const PDF_MAPPING = {
-            "1": "2025.pdf", "2": "2024.pdf", "3": "2023.pdf", "4": "2019.pdf", "5": "2018.pdf",
-            "6": "2017.pdf", "7": "2016.pdf", "8": "2015.pdf", "9": "2014.pdf", "10": "2013.pdf"
-        };
-
         let allData = [];
         let filterState = { search: '', year: 'All', category: 'All' };
 
+        // 1. Fetch and Parse
         Papa.parse(CSV_FILE, {
             download: true, header: true, skipEmptyLines: true,
             complete: function(res) {
@@ -71,12 +65,16 @@
             }
         });
 
+        // 2. Build Filter Buttons
         function initFilters(containerId, colName, isMulti = false) {
             let items = new Set();
             allData.forEach(row => {
                 if(!row[colName]) return;
-                if(isMulti) row[colName].split('/').forEach(s => items.add(s.trim()));
-                else items.add(row[colName]);
+                if(isMulti) {
+                    row[colName].split('/').forEach(s => items.add(s.trim()));
+                } else {
+                    items.add(row[colName]);
+                }
             });
             const sorted = Array.from(items).sort((a,b) => b-a);
             sorted.unshift('All');
@@ -90,10 +88,12 @@
             `).join('');
         }
 
+        // 3. Handle Filtering
         function setFilter(type, value) {
             filterState[type] = value;
             document.querySelectorAll(`.filter-btn-${type}`).forEach(btn => {
-                btn.classList = `filter-btn-${type} px-3 py-1.5 rounded-md text-xs font-bold transition-all border ${btn.id === 'btn-'+type+'-'+value ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200 hover:border-blue-400'}`;
+                const isActive = btn.id === 'btn-'+type+'-'+value;
+                btn.className = `filter-btn-${type} px-3 py-1.5 rounded-md text-xs font-bold transition-all border ${isActive ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200 hover:border-blue-400'}`;
             });
             render();
         }
@@ -107,6 +107,7 @@
             location.reload();
         }
 
+        // 4. Render Cards
         function render() {
             const container = document.getElementById('cardsContainer');
             const filtered = allData.filter(row => {
@@ -116,40 +117,47 @@
                 return matchYear && matchCat && matchSearch;
             });
 
-            document.getElementById('resultsCount').innerText = `Found ${filtered.length} sets`;
+            document.getElementById('resultsCount').innerText = `Showing ${filtered.length} paper sets`;
             
-            container.innerHTML = filtered.map(row => {
-                const pdfFile = PDF_MAPPING[row['Source']];
-                return `
-                <div class="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-lg transition-all p-5 flex flex-col relative group">
-                    <div class="flex justify-between items-start mb-4" onclick="this.parentElement.classList.toggle('expanded')">
+            container.innerHTML = filtered.map(row => `
+                <div class="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-all p-5 flex flex-col group cursor-pointer" onclick="this.classList.toggle('expanded')">
+                    
+                    <div class="flex justify-between items-start mb-4">
                         <div>
-                            <span class="px-2 py-1 bg-blue-50 text-blue-700 text-[10px] font-black uppercase rounded border border-blue-100">${row['Year']} • SET ${row['Set Number']}</span>
-                            <h2 class="text-lg font-bold text-gray-900 mt-2 cursor-pointer leading-tight">${row['Specific Topic']}</h2>
+                            <span class="px-2 py-0.5 bg-blue-100 text-blue-800 text-[10px] font-black uppercase rounded">${row['Year']} • SET ${row['Set Number']}</span>
+                            <h2 class="text-lg font-bold text-gray-900 mt-2 leading-tight">${row['Specific Topic']}</h2>
+                            <p class="text-xs text-gray-400 font-medium uppercase mt-1">${row['Main Category'] || ''}</p>
                         </div>
-                        <div class="flex gap-2">
-                             ${pdfFile ? `
-                                <a href="papers/${pdfFile}" target="_blank" title="View Original Paper" class="p-2 bg-red-50 text-red-600 rounded-full hover:bg-red-600 hover:text-white transition-colors stop-prop" onclick="event.stopPropagation()">
-                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9 2a2 2 0 00-2 2v8a2 2 0 002 2h6a2 2 0 002-2V6.414A2 2 0 0016.414 5L14 2.586A2 2 0 0012.586 2H9z"/><path d="M3 8a2 2 0 012-2v10h8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/></svg>
-                                </a>` : ''}
-                             <svg class="chevron w-6 h-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                        </div>
+                        <svg class="chevron w-6 h-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                     </div>
                     
                     <div class="card-content">
                         <div class="space-y-4">
                             <div>
-                                <h4 class="text-xs font-black text-blue-600 uppercase mb-1">Core Discussion Question</h4>
-                                <p class="text-gray-800 text-sm italic font-medium leading-relaxed bg-blue-50 p-3 rounded-lg border-l-4 border-blue-400">"${row['Core Discussion Question']}"</p>
+                                <h4 class="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1">Core Discussion Question</h4>
+                                <p class="text-gray-800 text-sm italic font-medium leading-relaxed border-l-4 border-blue-400 pl-3 py-1 bg-blue-50/50">
+                                    "${row['Core Discussion Question']}"
+                                </p>
                             </div>
+
+                            ${row['Other Questions'] ? `
                             <div>
-                                <h4 class="text-xs font-black text-gray-400 uppercase mb-1">Suggested Vocabulary & Key Points</h4>
-                                <p class="text-gray-600 text-sm leading-relaxed">${row['Suggested Vocabulary or Key Points'] || 'No details provided.'}</p>
+                                <h4 class="text-[10px] font-black text-purple-600 uppercase tracking-widest mb-1">Other Questions</h4>
+                                <p class="text-gray-700 text-sm leading-relaxed bg-purple-50 p-3 rounded-lg border border-purple-100">
+                                    ${row['Other Questions']}
+                                </p>
+                            </div>` : ''}
+
+                            <div>
+                                <h4 class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Suggested Vocabulary & Key Points</h4>
+                                <p class="text-gray-600 text-xs leading-relaxed">
+                                    ${row['Suggested Vocabulary or Key Points'] || 'Details not available.'}
+                                </p>
                             </div>
                         </div>
                     </div>
                 </div>
-            `}).join('');
+            `).join('');
         }
     </script>
 </body>
